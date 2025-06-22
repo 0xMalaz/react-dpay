@@ -9,11 +9,38 @@ import {
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
 
+const BASE_URL = "https://api.dpay.local";
+
 const HORIZON_URL = "https://horizon-testnet.stellar.org";
 const DESTINATION = "GC544JQ6EMO5IXOF53NSDTU5T5AK6WZYFC65SOY5WYDQXK3A22GUFSUN";
 const NATIVE_XLM_CONTRACT =
   "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQAUJKENLYUH";
 const server = new StellarSdk.Horizon.Server(HORIZON_URL);
+
+export async function triggerPayment(
+  productId: string,
+  buyerAddress: string,
+  walletAddress: string,
+  price: number,
+  priceType: number
+) {
+  const payload = {
+    productId: productId,
+    buyerAddress,
+    walletAddress,
+    price,
+    priceType,
+  };
+  const token = localStorage.getItem("token");
+  return fetch(`${BASE_URL}/payment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+}
 
 export const useDpayState = (initialState: boolean = false): DpayHook => {
   const [state, setState] = useState<DpayState>({
@@ -22,6 +49,7 @@ export const useDpayState = (initialState: boolean = false): DpayHook => {
     productName: undefined,
     productDescription: undefined,
     price: undefined,
+    dpayid: undefined,
   });
 
   const open = useCallback(() => {
@@ -50,46 +78,63 @@ export const useDpayState = (initialState: boolean = false): DpayHook => {
     }
   }, []);
 
-  const signTx = useCallback(async () => {
-    if (!state.address) {
-      await connect();
-    }
+  const signTx = useCallback(
+    async (destination: string, onSuccess?: () => void) => {
+      if (!state.address) {
+        await connect();
+      }
 
-    const sourceAccount = await server.loadAccount(state.address!);
-    let tx = new StellarSdk.TransactionBuilder(sourceAccount, {
-      fee: ((await server.fetchBaseFee()) + 200).toString(),
-      networkPassphrase: StellarSdk.Networks.TESTNET,
-    })
-      .addOperation(
-        StellarSdk.Operation.payment({
-          destination: DESTINATION,
-          asset: StellarSdk.Asset.native(),
-          amount: "1",
-        })
-      )
-      .setTimeout(180)
-      .build();
+      const sourceAccount = await server.loadAccount(state.address!);
 
-    const xdr = tx.toXDR();
-
-    try {
-      const signedTx = await signTransaction(xdr, {
+      let tx = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: ((await server.fetchBaseFee()) + 2000).toString(),
         networkPassphrase: StellarSdk.Networks.TESTNET,
-      });
+      })
+        .addOperation(
+          StellarSdk.Operation.payment({
+            destination,
+            asset: StellarSdk.Asset.native(),
+            amount: "100",
+          })
+        )
+        .setTimeout(30)
+        .build();
 
-      const signedFormattedTx = new StellarSdk.Transaction(
-        signedTx.signedTxXdr,
-        StellarSdk.Networks.TESTNET
-      );
-      console.log("Transaction signed:", signedTx);
-      console.log("signedFormattedTx signed:", signedFormattedTx);
+      const xdr = tx.toXDR();
 
-      const broadcastTx = await server.submitTransaction(signedFormattedTx);
-      console.log("Transaction broadcastTx:", broadcastTx);
-    } catch (error) {
-      console.error("Error signing transaction:", error);
-    }
-  }, [state.address]);
+      try {
+        const signedTx = await signTransaction(xdr, {
+          networkPassphrase: StellarSdk.Networks.TESTNET,
+        });
+
+        const signedFormattedTx = new StellarSdk.Transaction(
+          signedTx.signedTxXdr,
+          StellarSdk.Networks.TESTNET
+        );
+        console.log("Transaction signed:", signedTx);
+        console.log("signedFormattedTx signed:", signedFormattedTx);
+
+        const broadcastTx = await server.submitTransaction(signedFormattedTx);
+        if (broadcastTx.successful) {
+          // Trigger payment API call
+          if (state.dpayid && state.address && state.price !== undefined) {
+            // Use state.address for both buyer and wallet for now, and default priceType to "XLM"
+            triggerPayment(
+              state.dpayid,
+              state.address,
+              state.address,
+              state.price,
+              3
+            );
+          }
+          if (onSuccess) onSuccess();
+        }
+      } catch (error) {
+        console.error("Error signing transaction:", error);
+      }
+    },
+    [state.address, connect]
+  );
 
   const disconnect = useCallback(() => {
     setState((prev) => ({ ...prev, address: null }));
@@ -100,6 +145,7 @@ export const useDpayState = (initialState: boolean = false): DpayHook => {
       productName: string;
       productDescription: string;
       price: number;
+      dpayid: string;
     }) => {
       setState((prev) => ({
         ...prev,
@@ -124,9 +170,6 @@ export const useDpayState = (initialState: boolean = false): DpayHook => {
 /**
  * 
  * 
-
-
-
   const amount = 50;
     const userPublicKey = state.address!;
     const sourceAccount = await server.loadAccount(state.address!);
