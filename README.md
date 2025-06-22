@@ -31,3 +31,8 @@ export default App;
 ```
 
 Visit Dpay Dashboard to get your api key.
+
+Other repos: 
+
+dashboard -> https://github.com/0xMalaz/dpay-dashboard
+Backend -> https://github.com/JrLostar/PawnLabs.Dpay
