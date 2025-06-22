@@ -1,0 +1,71 @@
+{
+  "name": "react-dpay-modal",
+  "version": "0.1.0",
+  "description": "A React modal package for DPay payments with Stellar blockchain integration",
+  "keywords": [
+    "react",
+    "modal",
+    "payment",
+    "stellar",
+    "blockchain",
+    "dpay"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/0xMalaz/react-dpay-modal#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xMalaz/react-dpay-modal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/0xMalaz/react-dpay-modal/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "dev": "vite build --watch",
+    "example": "cd example && npm run dev",
+    "example:build": "npm run build && cd example && npm run build",
+    "prepublishOnly": "npm run build",
+    "patch": "npm version patch && npm publish",
+    "minor": "npm version minor && npm publish",
+    "major": "npm version major && npm publish"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
+    "@vitejs/plugin-react": "^4.5.2",
+    "eslint": "^9.29.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "@stellar/freighter-api": "^4.1.0",
+    "@stellar/stellar-sdk": "^13.3.0",
+    "framer-motion": "^12.18.1",
+    "passkey-kit": "^0.10.24",
+    "react-qrcode-logo": "^3.0.0"
+  }
+}
