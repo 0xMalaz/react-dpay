@@ -4,6 +4,7 @@ export interface DpayState {
   productName?: string;
   productDescription?: string;
   price?: number;
+  dpayid?: string;
 }
 
 export interface DpayActions {
@@ -16,8 +17,9 @@ export interface DpayActions {
     productName: string;
     productDescription: string;
     price: number;
+    dpayid: string;
   }) => void;
-  signTx: () => Promise<void>;
+  signTx: (destination: string, onSuccess?: () => void) => Promise<void>;
 }
 
 export interface DpayHook extends DpayState, DpayActions {}

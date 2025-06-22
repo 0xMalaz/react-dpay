@@ -1,9 +1,11 @@
+import React from "react";
 import { Diamond, Package, Sparkles } from "lucide-react";
 import { DpayProvider, useDpay } from "react-dpay-modal";
 import "./styles.css";
 
 const PricingCard = ({
   title,
+  dpayid,
   price,
   features,
   dpayModal,
@@ -15,6 +17,7 @@ const PricingCard = ({
       productName: title,
       productDescription: description,
       price: parseFloat(price.replace(/[^0-9.-]+/g, "")),
+      dpayid,
     });
     dpayModal.open();
   };
@@ -60,6 +63,7 @@ const PricingPage = () => {
   const pricingOptions = [
     {
       title: "Starter",
+      dpayid: "f6d6c91d-5d18-47c2-a6dc-97fca645dc2b",
       price: "$9/mo",
       features: [
         "Basic Crypto Payments",
@@ -72,6 +76,7 @@ const PricingPage = () => {
     },
     {
       title: "Pro",
+      dpayid: "f6d6c91d-5d18-47c2-a6dc-97fca645dc2b",
       price: "$29/mo",
       features: [
         "Advanced Crypto Payments",
@@ -85,6 +90,7 @@ const PricingPage = () => {
     },
     {
       title: "Enterprise",
+      dpayid: "f6d6c91d-5d18-47c2-a6dc-97fca645dc2b",
       price: "$99/mo",
       features: [
         "Enterprise Crypto Payments",
@@ -106,6 +112,7 @@ const PricingPage = () => {
           {pricingOptions.map((option, index) => (
             <PricingCard
               key={index}
+              dpayid={option.dpayid}
               title={option.title}
               price={option.price}
               features={option.features}
@@ -122,7 +129,7 @@ const PricingPage = () => {
 
 function App() {
   return (
-    <DpayProvider>
+    <DpayProvider apiKey="7O5zukZpwrdrMfMu87Mn7YSJ12xDNLa8Jbjd2Nsq+cOnB0Kfe7agGoXfo44R639S+I76tGMXGQl7RSM098DMr/lAc4t2mESt6ctYtU7sa3blB7D8H4aG6qAhoUm4xXt0">
       <PricingPage />
     </DpayProvider>
   );
