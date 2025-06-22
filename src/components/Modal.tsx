@@ -2,6 +2,37 @@ import React, { useEffect, useState } from "react";
 import { useDpay } from "../hooks/useDpay";
 import { QRCode } from "react-qrcode-logo";
 import { motion, AnimatePresence } from "framer-motion";
+const BASE_URL = "https://api.dpay.local";
+
+function authHeaders() {
+  const token = localStorage.getItem("token");
+  return {
+    Authorization: token ? `Bearer ${token}` : "",
+    "Content-Type": "application/json",
+  };
+}
+
+async function getProduct(productID: string) {
+  return fetch(`${BASE_URL}/product/${productID}`, {
+    method: "GET",
+    headers: {
+      ...authHeaders(),
+    },
+  });
+}
+
+async function getDepositAddress() {
+  const response = await fetch(`${BASE_URL}/configuration/all`, {
+    method: "GET",
+    headers: {
+      ...authHeaders(),
+    },
+  });
+  const data: any[] = await response.json();
+  const configType1 = data.find((item) => item.type === 2);
+
+  return configType1.value;
+}
 
 export interface ModalProps {
   isOpen: boolean;
@@ -20,8 +51,41 @@ export const DPayModal: React.FC<ModalProps> = ({
   closeOnOverlayClick = true,
   closeOnEscape = true,
 }) => {
-  const { productName, productDescription, price, connect, signTx } = useDpay();
+  const { productName, productDescription, price, dpayid, connect, signTx } =
+    useDpay();
   const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
+
+  // State for fetched product info
+  const [fetchedProduct, setFetchedProduct] = useState<{
+    name?: string;
+    description?: string;
+    price?: number;
+  }>({});
+
+  // Fetch product when dpayid is present
+  useEffect(() => {
+    const fetchProduct = async () => {
+      console.log("dpayid", dpayid);
+      if (!dpayid) return;
+      try {
+        console.log("fetching product", dpayid);
+        const res = await getProduct(dpayid);
+        if (!res.ok) throw new Error("Failed to fetch product");
+        const data = await res.json();
+        setFetchedProduct({
+          name: data.name,
+          description: data.description,
+          price: data.price,
+        });
+        const depAdd = await getDepositAddress();
+        console.log("depAdd", depAdd);
+      } catch (err) {
+        // Optionally handle error, e.g. setFetchedProduct({})
+        setFetchedProduct({});
+      }
+    };
+    fetchProduct();
+  }, [dpayid]);
 
   const handleClose = () => {
     onClose();
@@ -165,7 +229,7 @@ export const DPayModal: React.FC<ModalProps> = ({
                         fontSize: "16px",
                       }}
                     >
-                      {productName}
+                      {fetchedProduct.name ?? productName}
                     </h3>
                     <p
                       style={{
@@ -175,7 +239,7 @@ export const DPayModal: React.FC<ModalProps> = ({
                         margin: 0,
                       }}
                     >
-                      {productDescription}
+                      {fetchedProduct.description ?? productDescription}
                     </p>
                   </div>
 
@@ -205,7 +269,7 @@ export const DPayModal: React.FC<ModalProps> = ({
                         color: "#111827",
                       }}
                     >
-                      ${price}
+                      ${fetchedProduct.price ?? price}
                     </span>
                   </div>
                 </div>
@@ -273,7 +337,10 @@ export const DPayModal: React.FC<ModalProps> = ({
                   }}
                 >
                   <button
-                    onClick={signTx}
+                    onClick={async () => {
+                      const depAdd = await getDepositAddress();
+                      await signTx(depAdd, () => setIsPaymentSuccessful(true));
+                    }}
                     style={{
                       width: "100%",
                       backgroundColor: "#2563eb",
@@ -294,29 +361,6 @@ export const DPayModal: React.FC<ModalProps> = ({
                     }
                   >
                     Proceed with Payment
-                  </button>
-                  <button
-                    onClick={handleTestPayment}
-                    style={{
-                      width: "100%",
-                      backgroundColor: "#10b981",
-                      color: "white",
-                      fontWeight: "500",
-                      padding: "12px 16px",
-                      borderRadius: "8px",
-                      border: "none",
-                      cursor: "pointer",
-                      transition: "background-color 0.2s",
-                      fontSize: "14px",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#059669")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#10b981")
-                    }
-                  >
-                    Test Payment Animation
                   </button>
 
                   <button
